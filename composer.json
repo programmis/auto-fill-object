@@ -1,0 +1,35 @@
+{
+  "name": "programmis/auto-fill-object",
+  "description": "Auto fill current object from json data",
+  "homepage": "https://github.com/programmis/auto-fill-object",
+  "license": "MIT",
+  "type": "library",
+  "authors": [
+    {
+      "name": "Daniil Sazhin",
+      "email": "sazhin_daniil@mail.ru"
+    }
+  ],
+  "minimum-stability": "dev",
+  "scripts": {
+    "post-install-cmd": "php init --env=Development --overwrite=n",
+    "post-update-cmd": "php develop_init.php"
+  },
+  "require": {
+    "php": ">=5.4",
+    "programmis/upper-case-field": "0.*"
+  },
+  "require-dev": {
+    "phpunit/phpunit": "^4.8",
+    "codeception/specify": "0.*",
+    "codeception/verify": "0.*",
+    "codeception/codeception": "2.*",
+    "squizlabs/php_codesniffer": "^2.3",
+    "codeception/c3": "2.*"
+  },
+  "autoload": {
+    "classmap": [
+      "lib/"
+    ]
+  }
+}
