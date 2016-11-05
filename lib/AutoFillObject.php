@@ -12,47 +12,82 @@ trait AutoFillObject
 {
     public function fillByJson($json)
     {
+        if (is_string($json)) {
+            $json = json_decode($json);
+        }
         $var = get_object_vars($this);
         foreach ($var as $key => $value) {
             if (isset($json->$key)) {
                 //fill json objects array
                 $objectFields = $this->objectFields();
-                if (is_array($json->$key)
-                    && isset($json->$key[0])
-                    && is_object($json->$key[0])
-                    && array_key_exists($key, $objectFields)
-                    && is_array($objectFields[$key])
-                    && array_key_exists('class', $objectFields[$key])
-                    && array_key_exists('method', $objectFields[$key])
-                ) {
-                    $class  = $objectFields[$key]['class'];
-                    $method = $objectFields[$key]['method'];
-                    if (class_exists($class)
-                        && method_exists($this, $method)
-                        && method_exists($class, 'fillByJson')
+                if (array_key_exists($key, $objectFields)) {
+                    if (!is_array($objectFields[$key])
+                        && class_exists($objectFields[$key])
                     ) {
-                        foreach ($json->$key as $item) {
-                            $objectClass = new $class();
-                            $objectClass->fillByJson($item);
-                            $this->$method($objectClass);
+                        $class = $objectFields[$key];
+                    } elseif (isset($objectFields[$key]['class'])
+                        && class_exists($objectFields[$key]['class'])
+                    ) {
+                        $class = $objectFields[$key]['class'];
+                    } else {
+                        throw new \Exception(
+                            'Class "'
+                            . (is_array($objectFields[$key]) ? serialize($objectFields[$key]) : $objectFields[$key])
+                            . '" is not found for field "' . $key . '"'
+                        );
+                    }
+                    if (!method_exists($class, 'fillByJson')) {
+                        throw new \Exception('Please use trait "AutoFillObject" in class "' . $class . '"');
+                    }
+                    $method = '';
+                    if (isset($objectFields[$key]['method'])) {
+                        $method = $objectFields[$key]['method'];
+                        if (!method_exists($this, $method)) {
+                            throw new \Exception(
+                                'Method "' . $method . '" is not found in class "' . static::class . '"'
+                            );
                         }
                     }
-                } elseif (is_object($json->$key)
-                    && array_key_exists($key, $objectFields)
-                ) {
-                    //fill json object
-                    $class  = $objectFields[$key];
-                    $method = UpperCase::makeSetterMethodByField($key);
-                    if (class_exists($class)
-                        && method_exists($this, $method)
-                        && method_exists($class, 'fillByJson')
-                    ) {
+                    if (is_array($json->$key)) {
+                        foreach ($json->$key as $item) {
+                            /** @var AutoFillObject $objectClass */
+                            $objectClass = new $class();
+                            $objectClass->fillByJson($item);
+                            if ($method) {
+                                $this->$method($objectClass);
+                            } else {
+                                $this->$key[] = $objectClass;
+                            }
+                        }
+                    } elseif (is_object($json->$key)) {
+                        if (!$method) {
+                            $method = UpperCase::makeSetterMethodByField($key);
+                            if (!method_exists($this, $method)) {
+                                $method = '';
+                            }
+                        }
                         $objectClass = new $class();
                         $objectClass->fillByJson($json->$key);
-                        $this->$method($objectClass);
+                        if ($method) {
+                            $this->$method($objectClass);
+                        } else {
+                            $this->$key = $objectClass;
+                        }
+                    } else {
+                        throw new \Exception(
+                            'Field "' . $key . '" is not object and array, and present in "objectFields" array'
+                        );
                     }
                 } else {
-                    $this->$key = $json->$key;
+                    $method = UpperCase::makeSetterMethodByField($key);
+                    if (!method_exists($this, $method)) {
+                        $method = '';
+                    }
+                    if ($method) {
+                        $this->$method($json->$key);
+                    } else {
+                        $this->$key = $json->$key;
+                    }
                 }
             } else {
                 continue;
@@ -66,8 +101,8 @@ trait AutoFillObject
      * @return [
      *      'field' => 'name\space\path\to\class',
      *      'fields' => [
-     *          'class' => 'name\space\path\to\class2',
-     *          'method' => 'addField'
+     *              'class' => 'name\space\path\to\class2',
+     *              'method' => 'addField'
      *      ]
      * ]
      */

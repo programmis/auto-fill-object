@@ -10,3 +10,61 @@ php -r "unlink('composer-setup.php');"
 2) Install:
 
 php composer.phar require programmis/auto-fill-object
+
+_first find setMethodForField or method specified in objectFields array
+and if not finding them then set value to object field_
+
+```php
+class Dummy
+{
+    use lib\AutoFillObject;
+
+    private $i;
+    private $str;
+    private $dummy;
+
+    public function getDummy()
+    {
+        return $this->dummy;
+    }
+
+    public function setI($i)
+    {
+        $this->i = $i == 2 ? 0 : $i;
+    }
+
+    public function getI()
+    {
+        return $this->i;
+    }
+
+    public function getStr()
+    {
+        return $this->str;
+    }
+
+
+    public function objectFields()
+    {
+        return [
+            'dummy' => 'Dummy',
+        ];
+    }
+}
+
+$json  = json_encode([
+    'i'     => 1,
+    'str'   => 'dummy_text',
+    'dummy' => [
+        'i'   => 2,
+        'str' => 'dummy_text_2'
+    ]
+]);
+$dummy = new Dummy();
+$dummy->fillByJson($json);
+
+echo $dummy->getI() . "\n"; // 1
+echo $dummy->getStr() . "\n"; // dummy_text
+echo $dummy->getDummy()->getI() . "\n"; // 0 see in dummy setter
+echo $dummy->getDummy()->getStr() . "\n"; // dummy_text_2
+```
