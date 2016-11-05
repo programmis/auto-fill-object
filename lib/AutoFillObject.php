@@ -44,7 +44,7 @@ trait AutoFillObject
                         $method = $objectFields[$key]['method'];
                         if (!method_exists($this, $method)) {
                             throw new \Exception(
-                                'Method "' . $method . '" is not found in class "' . static::class . '"'
+                                'Method "' . $method . '" is not found in class "' . get_class() . '"'
                             );
                         }
                     }
