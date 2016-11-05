@@ -56,7 +56,7 @@ trait AutoFillObject
                             if ($method) {
                                 $this->$method($objectClass);
                             } else {
-                                $this->$key[] = $objectClass;
+                                array_push($this->$key, $objectClass);
                             }
                         }
                     } elseif (is_object($json->$key)) {
